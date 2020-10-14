@@ -1,5 +1,5 @@
-# docker build -t pro-gmail .
-# docker run -it -p 2345:2345 pro-gmail
+# docker build -t pro-gdrive .
+# docker run -it -p 2345:2345 pro-gdrive
 
 FROM golang:alpine AS builder
 
@@ -8,10 +8,10 @@ FROM golang:alpine AS builder
 RUN apk update && apk add --no-cache git
 
 RUN mkdir /pro
-ADD ./gConnect.go /pro/
+ADD ./gDriveList.go /pro/
 WORKDIR /pro
 RUN go get -d -v ./...
-RUN go build -o server gConnect.go
+RUN go build -o server gDriveList.go
 
 FROM alpine:latest
 
