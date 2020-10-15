@@ -2,13 +2,13 @@ version: "3"
 
 services:
   pro-gmail:
-    image: pro-gmail
-    container_name: Gmail
+    image: gdrive
+    container_name: gdrive
     restart: always
     ports:
       - 2345:2345
     networks: 
-      - monitoring
+      - google-drive
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -27,7 +27,7 @@ services:
     ports:
       - 9090:9090
     networks:
-      - monitoring
+      - google-drive
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -43,25 +43,14 @@ services:
       - GF_PANELS_DISABLE_SANITIZE_HTML=true
       - GF_SECURITY_ALLOW_EMBEDDING=true
     networks:
-      - monitoring
+      - google-drive
     volumes:
       - ./grafana_data/:/var/lib/grafana/
-  alert-manager:
-    image: prom/alertmanager:latest
-    container_name: alertmanager
-    depends_on:
-      - prometheus
-    restart: always
-    networks:
-      - monitoring
-    ports:
-      - 9093:9093
-      - 9094:9094
 
 volumes:
     grafana_data: {}
     prometheus_data: {}
 
 networks:
-  monitoring:
+  google-drive:
     driver: bridge
