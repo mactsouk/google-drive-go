@@ -7,33 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
-)
-
-// PORT is the TCP port number the server will listen to
-var PORT = ":2345"
-
-var (
-	nFiles = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Namespace: "GDRIVE",
-			Name:      "number_of_files",
-			Help:      "This is the number of files",
-		})
-
-	nDirs = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Namespace: "GDRIVE",
-			Name:      "number_of_directories",
-			Help:      "This is the number of directories",
-		})
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -104,48 +82,25 @@ func main() {
 	}
 	client := getClient(config)
 
-	http.Handle("/metrics", promhttp.Handler())
-	prometheus.MustRegister(nFiles)
-	prometheus.MustRegister(nDirs)
-
 	srv, err := drive.New(client)
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	go func() {
-		for {
-			var files float64 = 0
-			var directories float64 = 0
+	r, err := srv.Files.List().PageSize(10).Fields("nextPageToken, files(id,name,md5Checksum,mimeType,size,createdTime,parents)").Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve files: %v", err)
+	}
+	fmt.Println("Files:")
 
-			r, err := srv.Files.List().PageSize(10).Fields("nextPageToken, files(id,name,md5Checksum,mimeType,size,createdTime,parents)").Do()
-			if err != nil {
-				log.Fatalf("Unable to retrieve files: %v", err)
+	if len(r.Files) == 0 {
+		fmt.Println("No files found.")
+	} else {
+		for _, i := range r.Files {
+			fmt.Printf("%s (%d) (%s) (%s)\n", i.Name, i.Size, i.Parents, i.CreatedTime)
+			if i.MimeType == "application/vnd.google-apps.folder" {
+				fmt.Println("DIRECTORY")
 			}
-
-			if len(r.Files) == 0 {
-				log.Println("No files found.")
-				files = 0
-				directories = 0
-			} else {
-				for _, i := range r.Files {
-					if i.MimeType == "application/vnd.google-apps.folder" {
-						// log.Println("DIRECTORY")
-						directories = directories + 1
-					} else {
-						files = files + 1
-					}
-				}
-			}
-
-			// Set Prometheus metrics
-			nFiles.Set(files)
-			nDirs.Set(directories)
-
-			time.Sleep(5 * time.Second)
 		}
-	}()
-
-	log.Println("Listening to port", PORT)
-	log.Println(http.ListenAndServe(PORT, nil))
+	}
 }

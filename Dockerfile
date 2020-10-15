@@ -1,5 +1,5 @@
-# docker build -t pro-gdrive .
-# docker run -it -p 2345:2345 pro-gdrive
+# docker build -t gdrive .
+# docker run -it -p 2345:2345 gdrive
 
 FROM golang:alpine AS builder
 
