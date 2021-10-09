@@ -18,7 +18,7 @@ import (
 )
 
 // PORT is the TCP port number the server will listen to
-var PORT = ":2345"
+var PORT = ":2349"
 
 var (
 	nFiles = prometheus.NewGauge(
@@ -141,8 +141,9 @@ func main() {
 			// Set Prometheus metrics
 			nFiles.Set(files)
 			nDirs.Set(directories)
+			fmt.Println("Files:", files, "Folders:", directories)
 
-			time.Sleep(5 * time.Second)
+			time.Sleep(600 * time.Second)
 		}
 	}()
 
